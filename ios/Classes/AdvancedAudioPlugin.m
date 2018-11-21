@@ -15,7 +15,7 @@ static AVPlayerItem *playerItem;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  Switch(call.method) {
+  switch(call.method) {
     case @"getPlatformVersion":
       result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
       break;

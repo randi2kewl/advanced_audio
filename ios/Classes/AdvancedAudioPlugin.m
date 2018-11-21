@@ -15,20 +15,25 @@ static AVPlayerItem *playerItem;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  switch(call.method) {
-    case @"getPlatformVersion":
-      result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
-      break;
 
-    case @"play":
+  NSString *key = call.method;
+
+  void(^searchTerm)() = @{
+    @"play" : ^{
       val int success = [self play];
       result(@(success));
-      break;
+    },
+    @"getPlatformVersion" : ^{
+      result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
+    } 
+  }[key];
 
-    default:
-      result(FlutterMethodNotImplemented);
-      break;
+  if(dict != nil) {
+    searchTerm();
+  } else {
+    result(FlutterMethodNotImplemented);
   }
+
 }
 
 -(int)play {

@@ -10,4 +10,9 @@ class AdvancedAudio {
     final String version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
+
+  static Future<int> get play async {
+    final int success = await _channel.invokeMethod('play');
+    return success;
+  }
 }

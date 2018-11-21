@@ -28,7 +28,7 @@ static AVPlayerItem *playerItem;
     } 
   }[key];
 
-  if(dict != nil) {
+  if(searchTerm != nil) {
     searchTerm();
   } else {
     result(FlutterMethodNotImplemented);

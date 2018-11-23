@@ -23,9 +23,20 @@ static AVPlayerItem *playerItem;
       result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
     },
     @"play" : ^{
-      int success = [self play];
-      result(@(success));
+      NSString *url = call.arguments[@"url"];
+      [self play:url];
+      result(nil);
     },
+    @"setRate" : ^{
+      float rate = [call.arguments[@"rate"] floatValue];
+      [self setRate:rate];
+      result(nil);
+    },
+    @"pause" : ^{
+      [self pause];
+      result(nil);
+    },
+
   };
 
   CaseBlock c = methods[call.method];
@@ -36,14 +47,28 @@ static AVPlayerItem *playerItem;
   }
 }
 
--(int)play {
-    NSString *url = @"https://traffic.libsyn.com/secure/grumpyoldgeeks/298-Excelsior.mp3?dest-id=144134";
+- (void) play : (NSString*) url {
+    if(player == nil) {
+      playerItem = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:url]];
+      [playerItem addObserver:self forKeyPath:@"player.status" options:0 context:nil];
+      player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
+    }
     
-    playerItem = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:url]];
-    [playerItem addObserver:self forKeyPath:@"player.status" options:0 context:nil];
-    player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
     [player play];
-    return 1;
 }
+
+- (void) setRate : (float) newRate {
+  if(player) {
+    player.rate = newRate;
+  }
+}
+
+- (void) pause {
+  if(player) {
+    [player pause];
+  }
+}
+
+
 
 @end

@@ -11,8 +11,23 @@ class AdvancedAudio {
     return version;
   }
 
-  static Future<int> get play async {
-    final int success = await _channel.invokeMethod('play');
+  static Future<int> play(String url) async {
+    final int success = await _channel.invokeMethod('play', <String, dynamic>{
+      'url': url,
+    });
+    return success;
+  }
+
+  static Future<int> setRate(double rate) async {
+    final int success =
+        await _channel.invokeMethod('setRate', <String, dynamic>{
+      'rate': rate,
+    });
+    return success;
+  }
+
+  static Future<int> pause() async {
+    final int success = await _channel.invokeMethod('pause');
     return success;
   }
 }

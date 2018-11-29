@@ -6,6 +6,11 @@ class AdvancedAudio {
   static const MethodChannel _channel =
       const MethodChannel('podl.io/advanced_audio');
 
+  static Future<int> pause() async {
+    final int success = await _channel.invokeMethod('pause');
+    return success;
+  }
+  
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
     return version;
@@ -26,8 +31,9 @@ class AdvancedAudio {
     return success;
   }
 
-  static Future<int> pause() async {
-    final int success = await _channel.invokeMethod('pause');
+  static Future<int> stop() async {
+    final int success = await _channel.invokeMethod('stop');
     return success;
   }
+
 }

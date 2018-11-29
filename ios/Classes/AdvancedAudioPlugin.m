@@ -4,6 +4,7 @@
 
 static AVPlayer *player;
 static AVPlayerItem *playerItem;
+static NSString *lastPlayedUrl;
 
 @implementation AdvancedAudioPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
@@ -15,6 +16,9 @@ static AVPlayerItem *playerItem;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+
+  // Allow to continue playing while backgrounded and while hardware is silenced...
+  [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
 
   typedef void (^CaseBlock)(void);
 
@@ -36,6 +40,10 @@ static AVPlayerItem *playerItem;
       [self pause];
       result(nil);
     },
+    @"stop" : ^{
+      [self stop];
+      result(nil);
+    },
 
   };
 
@@ -48,13 +56,15 @@ static AVPlayerItem *playerItem;
 }
 
 - (void) play : (NSString*) url {
-    if(player == nil) {
+    if(player == nil || ![lastPlayedUrl isEqualToString:url]) {
       playerItem = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:url]];
       [playerItem addObserver:self forKeyPath:@"player.status" options:0 context:nil];
       player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
     }
     
     [player play];
+
+    lastPlayedUrl = url;
 }
 
 - (void) setRate : (float) newRate {
@@ -64,6 +74,12 @@ static AVPlayerItem *playerItem;
 }
 
 - (void) pause {
+  if(player) {
+    [player pause];
+  }
+}
+
+- (void) stop {
   if(player) {
     [player pause];
   }

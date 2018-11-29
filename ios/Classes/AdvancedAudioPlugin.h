@@ -5,5 +5,6 @@
 - (void)play:(NSString *)url;
 - (void)setRate:(float)rate;
 - (void)pause;
+- (void)stop;
 
 @end

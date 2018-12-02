@@ -13,12 +13,18 @@ import android.media.MediaPlayer;
 
 /** AdvancedAudioPlugin */
 public class AdvancedAudioPlugin implements MethodCallHandler {
-  MediaPlayer mediaPlayer;
+  private MediaPlayer mediaPlayer;
+  private final MethodChannel channel;
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
     final MethodChannel channel = new MethodChannel(registrar.messenger(), "podl.io/advanced_audio");
-    channel.setMethodCallHandler(new AdvancedAudioPlugin());
+    channel.setMethodCallHandler(new AdvancedAudioPlugin(registrar, channel));
+  }
+
+  private AdvancedAudioPlugin(Registrar registrar, MethodChannel channel) {
+    this.channel = channel;
+    channel.setMethodCallHandler(this);
   }
 
   @Override
@@ -40,12 +46,14 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
 
   private void pause() {
     mediaPlayer.pause();
+    channel.invokeMethod("audio.onPause", null);
   }
 
   private void stop() {
     mediaPlayer.stop();
     mediaPlayer.release();
     mediaPlayer = null;
+    channel.invokeMethod("audio.onStop", null);
   }
 
   private void play(String url) {
@@ -65,5 +73,6 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
       mediaPlayer.start();
     }
 
+    channel.invokeMethod("audio.onPlay", null);
   }
 }

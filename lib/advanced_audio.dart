@@ -12,10 +12,14 @@ class AdvancedAudio {
 
   dispose() {
     _isPlayingController.close();
+    _isCompletedController.close();
   }
 
   Stream<bool> get isPlaying => _isPlayingController.stream;
   final _isPlayingController = StreamController<bool>();
+
+  Stream<bool> get isCompleted => _isCompletedController.stream;
+  final _isCompletedController = StreamController<bool>();
 
   static Future<int> pause() async {
     final int success = await _channel.invokeMethod('pause');
@@ -55,7 +59,7 @@ class AdvancedAudio {
         break;
 
       case "audio.onComplete":
-        print("Completed audio");
+        _isCompletedController.add(true);
         break;
 
       case "audio.onPause":

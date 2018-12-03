@@ -15,6 +15,7 @@ import android.media.MediaPlayer;
 public class AdvancedAudioPlugin implements MethodCallHandler {
   private MediaPlayer mediaPlayer;
   private final MethodChannel channel;
+  private final Handler handler = new Handler();
 
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
@@ -74,5 +75,24 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
     }
 
     channel.invokeMethod("audio.onPlay", null);
+    handler.send(sendData);
   }
+
+  private final Runnable sendData = new Runnable(){
+    public void run(){
+      try {
+        if (!mediaPlayer.isPlaying()) {
+          handler.removeCallbacks(sendData);
+        }
+        int time = mediaPlayer.getCurrentPosition();
+        channel.invokeMethod("audio.onCurrentPosition", time);
+        handler.postDelayed(this, 200);
+      }
+      catch (Exception e) {
+        Log.w(ID, "When running handler", e);
+      }
+    }
+  };
+
+
 }

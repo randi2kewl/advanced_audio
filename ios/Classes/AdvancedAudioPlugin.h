@@ -6,5 +6,6 @@
 - (void)setRate:(float)rate;
 - (void)pause;
 - (void)stop;
+-(void)onTimeInterval:(CMTime)time;
 
 @end

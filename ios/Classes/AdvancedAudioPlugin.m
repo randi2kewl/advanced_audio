@@ -10,6 +10,7 @@ static FlutterMethodChannel *channel;
 @implementation AdvancedAudioPlugin
 
 FlutterMethodChannel *_channel;
+NSMutableSet *timeobservers;
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
@@ -65,6 +66,12 @@ FlutterMethodChannel *_channel;
       playerItem = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:url]];
       // [playerItem addObserver:self forKeyPath:@"player.status" options:0 context:nil];
       player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
+
+      CMTime interval = CMTimeMakeWithSeconds(0.2, NSEC_PER_SEC);
+      id timeObserver = [player addPeriodicTimeObserverForInterval:interval queue:nil usingBlock:^(CMTime time){
+          [self onTimeInterval:time];
+      }];
+      [timeobservers addObject:timeObserver];
     }
 
     [player play];
@@ -104,6 +111,18 @@ FlutterMethodChannel *_channel;
   }
     [_channel invokeMethod:@"audio.onStop" arguments:nil];
 
+}
+
+- (void)onTimeInterval:(CMTime)time {
+    int mseconds =  CMTimeGetSeconds(time)*1000;
+    [_channel invokeMethod:@"audio.onCurrentPosition" arguments:@(mseconds)];
+}
+
+- (void)dealloc {
+    for (id ob in timeobservers) {
+        [player removeTimeObserver:ob];
+    }
+    timeobservers = nil;
 }
 
 @end

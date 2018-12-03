@@ -2,6 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+enum PlayerStatus {
+  PLAYING,
+  STOPPED,
+  PAUSED,
+  COMPLETED,
+}
+
 class AdvancedAudio {
   static const MethodChannel _channel =
       const MethodChannel('podl.io/advanced_audio');
@@ -11,15 +18,23 @@ class AdvancedAudio {
   }
 
   dispose() {
-    _isPlayingController.close();
+    _playerStatusController.close();
     _isCompletedController.close();
+    _currentPositionController.close();
   }
 
-  Stream<bool> get isPlaying => _isPlayingController.stream;
-  final _isPlayingController = StreamController<bool>();
+  Stream<PlayerStatus> get playerStatus => _playerStatusController.stream;
+  final _playerStatusController = StreamController<PlayerStatus>();
 
   Stream<bool> get isCompleted => _isCompletedController.stream;
-  final _isCompletedController = StreamController<bool>();
+  final _isCompletedController = StreamController.broadcast();
+
+  Duration _duration = const Duration();
+  Duration get duration => _duration;
+
+  Stream<Duration> get currentPosition => _currentPositionController.stream;
+  final StreamController<Duration> _currentPositionController =
+      StreamController.broadcast();
 
   static Future<int> pause() async {
     final int success = await _channel.invokeMethod('pause');
@@ -52,26 +67,32 @@ class AdvancedAudio {
   }
 
   Future<void> _methodCallHandler(MethodCall call) async {
-    print('Method invoked: ${call.method}');
     switch (call.method) {
       case "audio.onPlay":
-        _isPlayingController.add(true);
+        _playerStatusController.add(PlayerStatus.PLAYING);
+        _currentPositionController.add(Duration(milliseconds: 0));
         break;
 
       case "audio.onComplete":
-        _isCompletedController.add(true);
+        _playerStatusController.add(PlayerStatus.COMPLETED);
         break;
 
       case "audio.onPause":
-        print("Paused audio");
+        _playerStatusController.add(PlayerStatus.PAUSED);
         break;
 
       case "audio.onStop":
-        print("Stopped audio");
+        _playerStatusController.add(PlayerStatus.STOPPED);
         break;
 
       case "audio.onRateChange":
         print("Changed rate for audio");
+        break;
+
+      case "audio.onCurrentPosition":
+        _currentPositionController
+            .add(new Duration(milliseconds: call.arguments));
+        _duration = Duration(milliseconds: call.arguments);
         break;
 
       default:

@@ -10,6 +10,8 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
+import android.util.Log;
 
 /** AdvancedAudioPlugin */
 public class AdvancedAudioPlugin implements MethodCallHandler {
@@ -34,7 +36,8 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
       result.success("Android " + android.os.Build.VERSION.RELEASE);
     } else if (call.method.equals("play")) {
       String url = call.argument("url");
-      play(url);
+      Long startTime = Long.valueOf(call.argument("startTime").toString());
+      play(url, startTime);
       result.success(null);
     } else if (call.method.equals("pause")) {
       pause();
@@ -57,7 +60,7 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
     channel.invokeMethod("audio.onStop", null);
   }
 
-  private void play(String url) {
+  private void play(String url, Long startTime) {
     if (mediaPlayer == null) {
       mediaPlayer = new MediaPlayer();
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -75,24 +78,23 @@ public class AdvancedAudioPlugin implements MethodCallHandler {
     }
 
     channel.invokeMethod("audio.onPlay", null);
-    handler.send(sendData);
+    sendData.run();
   }
 
-  private final Runnable sendData = new Runnable(){
-    public void run(){
+  private final Runnable sendData = new Runnable() {
+    public void run() {
       try {
         if (!mediaPlayer.isPlaying()) {
           handler.removeCallbacks(sendData);
+          this.wait();
         }
         int time = mediaPlayer.getCurrentPosition();
         channel.invokeMethod("audio.onCurrentPosition", time);
         handler.postDelayed(this, 200);
-      }
-      catch (Exception e) {
-        Log.w(ID, "When running handler", e);
+      } catch (Exception e) {
+        // TODO: Handle expection
       }
     }
   };
-
 
 }

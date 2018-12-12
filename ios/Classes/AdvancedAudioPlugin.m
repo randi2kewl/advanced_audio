@@ -1,6 +1,7 @@
 #import "AdvancedAudioPlugin.h"
 #import <AVKit/AVKit.h>
 #import <AVFoundation/AVFoundation.h>
+#import <MediaPlayer/MediaPlayer.h>
 
 static AVPlayer *player;
 static AVPlayerItem *playerItem;
@@ -11,12 +12,18 @@ static FlutterMethodChannel *channel;
 
 FlutterMethodChannel *_channel;
 NSMutableSet *timeobservers;
+MPNowPlayingInfoCenter *infoCenter;
+MPRemoteCommandCenter *commandCenter;
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
       methodChannelWithName:@"podl.io/advanced_audio"
             binaryMessenger:[registrar messenger]];
   AdvancedAudioPlugin* instance = [[AdvancedAudioPlugin alloc] init];
+    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+    infoCenter = [MPNowPlayingInfoCenter defaultCenter];
+    commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+
   [registrar addMethodCallDelegate:instance channel:channel];
     _channel = channel;
 }
@@ -34,7 +41,8 @@ NSMutableSet *timeobservers;
     },
     @"play" : ^{
       NSString *url = call.arguments[@"url"];
-      [self play:url];
+      int startTime = [call.arguments[@"startTime"] intValue];
+      [self play:url atTime:startTime];
       result(nil);
     },
     @"setRate" : ^{
@@ -61,10 +69,11 @@ NSMutableSet *timeobservers;
   }
 }
 
-- (void) play : (NSString*) url {
+- (void) play: (NSString*)url atTime:(int)startTime {
     if(player == nil || ![lastPlayedUrl isEqualToString:url]) {
       playerItem = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:url]];
       // [playerItem addObserver:self forKeyPath:@"player.status" options:0 context:nil];
+
       player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
 
       CMTime interval = CMTimeMakeWithSeconds(0.2, NSEC_PER_SEC);
@@ -73,9 +82,17 @@ NSMutableSet *timeobservers;
       }];
       [timeobservers addObject:timeObserver];
     }
-
+    
+    CMTime cmtStartTime = CMTimeMakeWithSeconds((double)startTime/1000, 1);
+    [player seekToTime:cmtStartTime];
+    
     [player play];
+    
     [_channel invokeMethod:@"audio.onPlay" arguments:nil];
+
+    NSMutableDictionary *songInfo = [NSMutableDictionary dictionary];
+    [songInfo setValue:@"some title" forKey:MPMediaItemPropertyTitle];
+    infoCenter.nowPlayingInfo = songInfo;
     
     [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
               object:playerItem
@@ -87,6 +104,7 @@ NSMutableSet *timeobservers;
 
 
     lastPlayedUrl = url;
+    [self setCommands];
 }
 
 - (void) setRate : (float) newRate {
@@ -102,7 +120,6 @@ NSMutableSet *timeobservers;
     [player pause];
   }
     [_channel invokeMethod:@"audio.onPause" arguments:nil];
-
 }
 
 - (void) stop {
@@ -123,6 +140,24 @@ NSMutableSet *timeobservers;
         [player removeTimeObserver:ob];
     }
     timeobservers = nil;
+}
+
+- (void) setCommands {
+    MPRemoteCommand *pauseCommand = [commandCenter pauseCommand];
+    pauseCommand.enabled = true;
+    [pauseCommand addTarget:self action:@selector(pauseCommand:)];
+    
+    MPRemoteCommand *playCommand = [commandCenter playCommand];
+    playCommand.enabled = true;
+    [playCommand addTarget:self action:@selector(playCommand:)];
+}
+
+- (void) pauseCommand:(MPRemoteCommandEvent *) event {
+    [self pause];
+}
+
+- (void) playCommand:(MPRemoteCommandEvent *) event {
+    [self play:lastPlayedUrl atTime:0];
 }
 
 @end

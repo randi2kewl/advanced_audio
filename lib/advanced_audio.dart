@@ -46,9 +46,13 @@ class AdvancedAudio {
     return version;
   }
 
-  static Future<int> play(String url) async {
+  static Future<int> play(String url, int startTime) async {
+    print("URL: $url");
+    print("startTime: $startTime");
+
     final int success = await _channel.invokeMethod('play', <String, dynamic>{
       'url': url,
+      'startTime': startTime,
     });
     return success;
   }
@@ -90,6 +94,7 @@ class AdvancedAudio {
         break;
 
       case "audio.onCurrentPosition":
+        print(call.arguments);
         _currentPositionController
             .add(new Duration(milliseconds: call.arguments));
         _duration = Duration(milliseconds: call.arguments);

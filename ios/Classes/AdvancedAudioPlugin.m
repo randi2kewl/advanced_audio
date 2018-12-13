@@ -83,10 +83,12 @@ MPRemoteCommandCenter *commandCenter;
       [timeobservers addObject:timeObserver];
     }
     
-    CMTime cmtStartTime = CMTimeMakeWithSeconds((double)startTime/1000, 1);
-    [player seekToTime:cmtStartTime];
-    
     [player play];
+
+    if(startTime > 0) {
+        CMTime cmtStartTime = CMTimeMakeWithSeconds((double)startTime/1000, 1);
+        [player seekToTime:cmtStartTime];
+    }
     
     [_channel invokeMethod:@"audio.onPlay" arguments:nil];
 

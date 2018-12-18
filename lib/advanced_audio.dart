@@ -94,7 +94,7 @@ class AdvancedAudio {
         break;
 
       case "audio.onCurrentPosition":
-        print(call.arguments);
+        // print(call.arguments);
         _currentPositionController
             .add(new Duration(milliseconds: call.arguments));
         _duration = Duration(milliseconds: call.arguments);
